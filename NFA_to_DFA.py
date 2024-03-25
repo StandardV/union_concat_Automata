@@ -1,22 +1,80 @@
 """NFA to DFA"""
 
 import pandas as pd
-print('\nDO REMEMBER TO ADD ACCEPT REJECT STATE AND ARROW POINTER\n')
+import numbers
+#print('\nDO REMEMBER TO ADD ACCEPT REJECT STATE AND ARROW POINTER\n')
 
 #INPUT VALUE FOR THE TABLE
 
-index_count = [0,1,2,3,4,5,6,7,8] #this is the identifier column
+
+index_count = [0,1,4,5,2,6,3] #this is the identifier column
 
 data_set_pointer = 0 #this is the pointer of index_count row
 
-data = {0:  [(1,2,5,6),(1,2,5,6),3,4,(1,2,5,6),"None",7,8,"None"]
-        }#Column name have to specifically follow 0,1,2,3,4
+data = {
+    
+0 : [1, 1, (4,5), (5,6), 5, 6, 6],
+1 : [4, 4, (2,4), (3,5), 2, 6, 3],
+2 : [4, 4, (4,5), (5,6), 5, 6, 6]
+
+
+       }#Column name have to specifically follow 0,1,2,3,4
  
+acceptance_set = [0,0,0,0,0,1,0]
+
+
+
+
+
 
 
 
 ##DONT MODIFY THINGS BELLOW##
+def index_check_hasNone(new_df: pd.DataFrame,new_value):
+    # Check if the index contains "None"
+    has_none_index = "None" in new_df.index
+    if has_none_index:
+        # Get the maximum value in the index, excluding "None"
+        max_value = new_df.index.drop("None").max()
+        # Create a new value for replacing "None"
+        if new_value == 0:
+            new_value = max_value + 1
+        # Replace cell values of "None" with the new value
+        new_df = new_df.replace("None", new_value)
+        # Replace index values of "None" with the new value
+        new_df.index = new_df.index.where(new_df.index != "None", new_value)
+    return new_df
 
+def add_acceptanceState(new_df:pd.DataFrame,index_dict,if_complement:bool, manual_value):
+    acceptance_set = []
+    one_exist = False
+    for index_value in new_df.index:
+        if isinstance(index_value, int):
+            acceptance_set.append(index_dict[index_value])
+        elif index_value == "None":
+            acceptance_set.append(0)
+        else:
+            one_exist = False
+            
+            for i in index_value:
+                if i.isdigit() and index_dict[int(i)] == 1:
+                    one_exist = True
+                    break
+            acceptance_set.append(int(one_exist))
+
+
+    if if_complement is False:
+        #just pure append new acceptance_set into new_df
+        new_df['acceptance'] = acceptance_set
+    else:
+        inverted_list = [1 - x for x in acceptance_set]
+        new_df = index_check_hasNone(new_df,manual_value)
+
+        new_df['acceptance'] = inverted_list
+        if one_exist != True:
+            new_df.sort_index()
+    
+    return new_df
 
 def add_non_duplicate(name_at_rank2):
     """Removes duplicates and returns a tuple."""
@@ -68,6 +126,15 @@ row_value = new_df.iloc[0]
 
 
 #print(new_df)
+
+index_dict = {}
+for count,index_value in enumerate(data_set.index):
+    index_dict[index_value] = acceptance_set[count]    
+
+
+
+
+
 
 value_adding = None
 
@@ -141,14 +208,15 @@ while len(row_value) > 0:
         
 
 #print(row_existed_value)
+    
+if __name__ == "__main__":
+    print('\nIf complement:Set it to true   ## REMEMBER MANUAL VALUE--IT SHOULD BE THE MAXVALUE IN ALL ITERATION + 1##')
+    new_df = add_acceptanceState(new_df,index_dict,if_complement=True,  manual_value=0)
+    # print the data.
+    print(new_df)
 
 
+    print('\nIn total have ',len(new_df),'states\n')
 
-# print the data.
-print(new_df)
-
-
-print('\nIn total have ',len(new_df),'states\n')
-
-print('DO REMEMBER TO ADD ACCEPT REJECT STATE AND ARROW POINTER, Accept rejection state is an OR for every index in list\n')
+#print('DO REMEMBER TO ADD ACCEPT REJECT STATE AND ARROW POINTER, Accept rejection state is an OR for every index in list\n')
 
